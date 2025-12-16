@@ -28,6 +28,10 @@ export const useAppStore = defineStore('app', () => {
 
   // 獲取用戶數據
   const fetchUsers = async () => {
+    if (!import.meta.server) {
+      console.log('fetchUsers 只能在 SSR 階段執行')
+      return
+    }
     try {
       loading.value = true
       error.value = null
