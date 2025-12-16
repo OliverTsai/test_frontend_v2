@@ -78,35 +78,41 @@ const editUser = (user: User) => {
 // 添加用戶
 const addUser = async () => {
   if (newUser.name && newUser.age) {
-    await appStore.addUser({
-      name: newUser.name,
-      age: Number(newUser.age)
-    })
-    
-    // 清空表單
-    newUser.name = ''
-    newUser.age = ''
+    if (confirm('確定要新增此用戶嗎？')) {
+      await appStore.addUser({
+        name: newUser.name,
+        age: Number(newUser.age)
+      })
+      
+      // 清空表單
+      newUser.name = ''
+      newUser.age = ''
 
-    await appStore.fetchUsers()
+      await appStore.fetchUsers()
+    }
+    
   }
 }
 
 // 更新用戶
 const updateUser = async () => {
   if (currentUserId.value && newUser.name && newUser.age) {
-    await appStore.updateUser({
-      id: Number(currentUserId.value),
-      name: newUser.name,
-      age: Number(newUser.age)
-    })
-    
-    // 重置表單
-    newUser.name = ''
-    newUser.age = ''
-    isEditing.value = false
-    currentUserId.value = null
+    if (confirm('確定要修改此用戶嗎？')) {
+      await appStore.updateUser({
+        id: Number(currentUserId.value),
+        name: newUser.name,
+        age: Number(newUser.age)
+      })
+      
+      // 重置表單
+      newUser.name = ''
+      newUser.age = ''
+      isEditing.value = false
+      currentUserId.value = null
 
-    await appStore.fetchUsers()
+      await appStore.fetchUsers()
+    }
+    
   }
 }
 
