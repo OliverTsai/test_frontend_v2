@@ -11,8 +11,8 @@
         <input v-model="newUser.age" type="number" class="form-input" />
       </div>
       <div class="form-actions">
-        <EBtn v-if="isEditing" color="success" @click="updateUser">{{ $t('edit_user') }}</EBtn>
-        <EBtn v-else color="warn" @click="addUser">{{ $t('add_user') }}</EBtn>
+        <EBtn v-if="isEditing" color="success" @click="openUpdateConfirmDialog">{{ $t('edit_user') }}</EBtn>
+        <EBtn v-else color="warn" @click="openAddConfirmDialog">{{ $t('add_user') }}</EBtn>
       </div>
     </div>
 
@@ -33,12 +33,27 @@
             <td>{{ user.age }}</td>
             <td class="actions-cell">
               <EBtn color="success" @click="editUser(user)">{{ $t('edit') }}</EBtn>
-              <EBtn color="error" @click="deleteUser(user.id)">{{ $t('delete') }}</EBtn>
+              <EBtn color="error" @click="openDeleteConfirmDialog(user.id)">{{ $t('delete') }}</EBtn>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
+
+    <!-- 新增確認對話框 -->
+    <EDialog ref="addConfirmDialogRef" :title="$t('add_user')" @confirm="confirmAddUser">
+      <p>{{ $t('confirm_add_message') }}</p>
+    </EDialog>
+    
+    <!-- 更新確認對話框 -->
+    <EDialog ref="updateConfirmDialogRef" :title="$t('edit_user')" @confirm="confirmUpdateUser">
+      <p>{{ $t('confirm_edit_message') }}</p>
+    </EDialog>
+    
+    <!-- 刪除確認對話框 -->
+    <EDialog ref="deleteConfirmDialogRef" :title="$t('delete_user')" @confirm="confirmDeleteUser">
+      <p>{{ $t('confirm_delete') }}</p>
+    </EDialog>
   </div>
 </template>
 
@@ -49,6 +64,11 @@ import { useAppStore } from '~/store/app'
 const appStore = useAppStore()
 const isEditing = ref(false)
 const currentUserId = ref<number | null>(null)
+
+// 對話框引用
+const addConfirmDialogRef = ref<{ open: () => void; close: () => void } | null>(null)
+const updateConfirmDialogRef = ref<{ open: () => void; close: () => void } | null>(null)
+const deleteConfirmDialogRef = ref<{ open: () => void; close: () => void } | null>(null)
 
 interface User {
   id: number
@@ -75,51 +95,68 @@ const editUser = (user: User) => {
   newUser.age = user.age.toString()
 }
 
-// 添加用戶
-const addUser = async () => {
+// 打開新增確認對話框
+const openAddConfirmDialog = () => {
   if (newUser.name && newUser.age) {
-    if (confirm('確定要新增此用戶嗎？')) {
-      await appStore.addUser({
-        name: newUser.name,
-        age: Number(newUser.age)
-      })
-      
-      // 清空表單
-      newUser.name = ''
-      newUser.age = ''
-
-      await appStore.fetchUsers()
-    }
-    
+    addConfirmDialogRef.value?.open()
+  } else {
+    alert('請填寫完整的用戶信息')
   }
 }
 
-// 更新用戶
-const updateUser = async () => {
+// 打開更新確認對話框
+const openUpdateConfirmDialog = () => {
   if (currentUserId.value && newUser.name && newUser.age) {
-    if (confirm('確定要修改此用戶嗎？')) {
-      await appStore.updateUser({
-        id: Number(currentUserId.value),
-        name: newUser.name,
-        age: Number(newUser.age)
-      })
-      
-      // 重置表單
-      newUser.name = ''
-      newUser.age = ''
-      isEditing.value = false
-      currentUserId.value = null
-
-      await appStore.fetchUsers()
-    }
-    
+    updateConfirmDialogRef.value?.open()
+  } else {
+    alert('請填寫完整的用戶信息')
   }
 }
 
-// 刪除用戶
-const deleteUser = async (id:number) => {
-  if (confirm('確定要刪除此用戶嗎？')) {
-    await appStore.deleteUser(id)
+// 打開刪除確認對話框
+const openDeleteConfirmDialog = (id: number) => {
+  currentUserId.value = id
+  deleteConfirmDialogRef.value?.open()
+}
+
+// 確認添加用戶
+const confirmAddUser = async () => {
+  await appStore.addUser({
+    name: newUser.name,
+    age: Number(newUser.age)
+  })
+  
+  // 清空表單
+  newUser.name = ''
+  newUser.age = ''
+
+  await appStore.fetchUsers()
+}
+
+// 確認更新用戶
+const confirmUpdateUser = async () => {
+  if (currentUserId.value) {
+    await appStore.updateUser({
+      id: Number(currentUserId.value),
+      name: newUser.name,
+      age: Number(newUser.age)
+    })
+    
+    // 重置表單
+    newUser.name = ''
+    newUser.age = ''
+    isEditing.value = false
+    currentUserId.value = null
+
+    await appStore.fetchUsers()
+  }
+}
+
+// 確認刪除用戶
+const confirmDeleteUser = async () => {
+  if (currentUserId.value) {
+    await appStore.deleteUser(currentUserId.value)
+    await appStore.fetchUsers()
   }
 }
 </script>

@@ -7,6 +7,8 @@
   "edit_user": "編輯用戶",
   "delete_user": "刪除用戶",
   "confirm_delete": "確定要刪除此用戶嗎？",
+  "confirm_add_message": "您確定要新增此用戶嗎？",
+  "confirm_edit_message": "您確定要更新此用戶的資訊嗎？",
   "name": "姓名",
   "email": "電子郵件",
   "age": "年齡",
