@@ -4,14 +4,14 @@
       <h2 class="form-title">{{ $t('actions') }}</h2>
       <div class="form-group">
         <label>{{ $t('name') }}</label>
-        <input v-model="newUser.name" type="text" class="form-input" />
+        <input v-model="appStore.formData.name" type="text" class="form-input" />
       </div>
       <div class="form-group">
         <label>{{ $t('age') }}</label>
-        <input v-model="newUser.age" type="number" class="form-input" />
+        <input v-model="appStore.formData.age" type="number" class="form-input" />
       </div>
       <div class="form-actions">
-        <EBtn v-if="isEditing" color="success" @click="openUpdateConfirmDialog">{{ $t('edit_user') }}</EBtn>
+        <EBtn v-if="appStore.isEditing" color="success" @click="openUpdateConfirmDialog">{{ $t('edit_user') }}</EBtn>
         <EBtn v-else color="warn" @click="openAddConfirmDialog">{{ $t('add_user') }}</EBtn>
       </div>
     </div>
@@ -58,29 +58,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, reactive } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useAppStore } from '~/store/app'
 
 const appStore = useAppStore()
-const isEditing = ref(false)
-const currentUserId = ref<number | null>(null)
 
 // 對話框引用
 const addConfirmDialogRef = ref<{ open: () => void; close: () => void } | null>(null)
 const updateConfirmDialogRef = ref<{ open: () => void; close: () => void } | null>(null)
 const deleteConfirmDialogRef = ref<{ open: () => void; close: () => void } | null>(null)
-
-interface User {
-  id: number
-  name: string
-  age: number
-}
-
-// 表單數據
-const newUser = reactive({
-  name: '',
-  age: ''
-})
 
 // 初始化
 onMounted(async () => {
@@ -88,16 +74,15 @@ onMounted(async () => {
 })
 
 // 編輯用戶
-const editUser = (user: User) => {
-  isEditing.value = true
-  currentUserId.value = user.id
-  newUser.name = user.name
-  newUser.age = user.age.toString()
+const editUser = (user: { id: number, name: string, age: number }) => {
+  appStore.setEditMode(true)
+  appStore.setCurrentUserId(user.id)
+  appStore.setFormData(user.name, user.age)
 }
 
 // 打開新增確認對話框
 const openAddConfirmDialog = () => {
-  if (newUser.name && newUser.age) {
+  if (appStore.formData.name && appStore.formData.age) {
     addConfirmDialogRef.value?.open()
   } else {
     alert('請填寫完整的用戶信息')
@@ -106,7 +91,7 @@ const openAddConfirmDialog = () => {
 
 // 打開更新確認對話框
 const openUpdateConfirmDialog = () => {
-  if (currentUserId.value && newUser.name && newUser.age) {
+  if (appStore.currentUserId && appStore.formData.name && appStore.formData.age) {
     updateConfirmDialogRef.value?.open()
   } else {
     alert('請填寫完整的用戶信息')
@@ -115,49 +100,26 @@ const openUpdateConfirmDialog = () => {
 
 // 打開刪除確認對話框
 const openDeleteConfirmDialog = (id: number) => {
-  currentUserId.value = id
+  appStore.setCurrentUserId(id)
   deleteConfirmDialogRef.value?.open()
 }
 
 // 確認添加用戶
 const confirmAddUser = async () => {
-  await appStore.addUser({
-    name: newUser.name,
-    age: Number(newUser.age)
-  })
-  
-  // 清空表單
-  newUser.name = ''
-  newUser.age = ''
-
+  await appStore.addUser()
   await appStore.fetchUsers()
 }
 
 // 確認更新用戶
 const confirmUpdateUser = async () => {
-  if (currentUserId.value) {
-    await appStore.updateUser({
-      id: Number(currentUserId.value),
-      name: newUser.name,
-      age: Number(newUser.age)
-    })
-    
-    // 重置表單
-    newUser.name = ''
-    newUser.age = ''
-    isEditing.value = false
-    currentUserId.value = null
-
-    await appStore.fetchUsers()
-  }
+  await appStore.updateUser()
+  await appStore.fetchUsers()
 }
 
 // 確認刪除用戶
 const confirmDeleteUser = async () => {
-  if (currentUserId.value) {
-    await appStore.deleteUser(currentUserId.value)
-    await appStore.fetchUsers()
-  }
+  await appStore.deleteUser()
+  await appStore.fetchUsers()
 }
 </script>
 
